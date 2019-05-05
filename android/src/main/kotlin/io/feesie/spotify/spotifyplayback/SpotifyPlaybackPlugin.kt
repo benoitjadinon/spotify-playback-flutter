@@ -162,6 +162,7 @@ try {
 
             override fun onFailure(throwable: Throwable) {
               // Something went wrong when attempting to connect! Handle errors here
+              // https://github.com/spotify/android-sdk/blob/master/app-remote-lib/ERRORS.md
               eventSink.error("connect", "error", throwable)
             }
           })
@@ -208,11 +209,15 @@ try {
    */
   private fun getPlaybackPosition(result: Result) {
     if (mSpotifyAppRemote != null) {
-      mSpotifyAppRemote!!.playerApi.subscribeToPlayerState()
-          .setEventCallback { playerState: PlayerState? ->
+      mSpotifyAppRemote!!.playerApi.playerState.setResultCallback{
+          playerState: PlayerState? ->
             val position = playerState!!.playbackPosition
             result.success(position)
+          }.setErrorCallback{
+            throwable:Throwable -> result.error("error", "playerState", throwable)
           }
+    } else {
+        result.error("error", "no mSpotifyAppRemote", "is null")
     }
   }
 
@@ -233,15 +238,13 @@ try {
    */
   private fun getCurrentlyPlayingTrack(result: Result) {
     if (mSpotifyAppRemote != null) {
-      mSpotifyAppRemote!!.playerApi.subscribeToPlayerState()
-          .setEventCallback { playerState: PlayerState? ->
+      mSpotifyAppRemote!!.playerApi.playerState.setResultCallback{
+          playerState: PlayerState? ->
             val track: Track = playerState!!.track
             result.success(track)
-
           }
     } else {
       result.error("error", "no mSpotifyAppRemote", "is null")
-
     }
   }
 
